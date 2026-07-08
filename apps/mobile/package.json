@@ -18,16 +18,18 @@
     "@react-navigation/native": "^6.1.18",
     "@react-navigation/native-stack": "^6.11.0",
     "@style-companion/shared": "workspace:*",
-    "expo": "^51.0.20",
-    "expo-modules-core": "^1.12.26",
-    "expo-status-bar": "^1.12.1",
-    "react": "^18.2.0",
-    "react-native": "^0.74.3",
-    "react-native-safe-area-context": "^4.10.5",
-    "react-native-screens": "^3.34.0"
+    "expo": "^54.0.35",
+    "expo-modules-core": "^3.0.30",
+    "expo-status-bar": "^3.0.9",
+    "react": "^19.1.0",
+    "react-native": "^0.81.5",
+    "react-native-safe-area-context": "^5.6.2",
+    "react-native-screens": "^4.16.0",
+    "react-native-web": "^0.21.2"
   },
   "devDependencies": {
-    "@types/react": "^18.2.79",
-    "typescript": "^5.5.4"
+    "@types/react": "^19.1.17",
+    "metro-runtime": "^0.86.0",
+    "typescript": "^5.9.3"
   }
 }
