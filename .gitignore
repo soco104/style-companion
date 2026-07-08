@@ -8,6 +8,9 @@ build/
 .next/
 .expo/
 coverage/
+.turbo/
+out/
+*.tsbuildinfo
 
 # Environment
 .env
