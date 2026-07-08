@@ -1,11 +1,13 @@
 {
   "expo": {
     "name": "Style Companion",
-    "slug": "style-companion",
+    "slug": "style-companion-1",
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true
     },
@@ -13,6 +15,12 @@
       "adaptiveIcon": {
         "backgroundColor": "#f8fafc"
       }
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "b7287d29-4971-45dc-8f68-6fd986abebab"
+      }
+    },
+    "owner": "soco104s-team"
   }
 }

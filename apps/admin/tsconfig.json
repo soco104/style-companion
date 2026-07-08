@@ -8,6 +8,7 @@
     "lib": ["dom", "dom.iterable", "es2022"],
     "module": "esnext",
     "noEmit": true,
+    "declaration": false,
     "plugins": [{ "name": "next" }],
     "target": "es2022"
   },
