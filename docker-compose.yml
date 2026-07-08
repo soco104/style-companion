@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: style-companion-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: style_companion
+      POSTGRES_USER: style_companion
+      POSTGRES_PASSWORD: style_companion
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U style_companion -d style_companion"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

@@ -1,0 +1,24 @@
+{
+  "name": "style-companion",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@11.7.0",
+  "scripts": {
+    "build": "pnpm -r build",
+    "db:down": "docker compose down",
+    "db:seed": "pnpm --filter @style-companion/api db:seed",
+    "db:up": "docker compose up -d postgres",
+    "dev": "pnpm -r --parallel dev",
+    "format": "prettier --write .",
+    "lint": "pnpm -r lint",
+    "prisma:generate": "pnpm --filter @style-companion/api prisma:generate",
+    "prisma:migrate:deploy": "pnpm --filter @style-companion/api prisma:migrate:deploy",
+    "prisma:migrate": "pnpm --filter @style-companion/api prisma:migrate",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "prettier": "^3.3.3",
+    "typescript": "^5.5.4"
+  }
+}

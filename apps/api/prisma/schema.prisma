@@ -1,0 +1,381 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  CUSTOMER
+  SHOPPER
+  ADMIN
+}
+
+enum BookingStatus {
+  REQUESTED
+  ACCEPTED
+  DECLINED
+  CANCELLED
+  COMPLETED
+  DISPUTED
+}
+
+enum ModerationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  FLAGGED
+  HIDDEN
+}
+
+enum PaymentStatus {
+  PENDING
+  AUTHORIZED
+  PAID
+  REFUNDED
+  FAILED
+  CANCELLED
+}
+
+enum PaymentProvider {
+  STRIPE
+  MANUAL
+}
+
+enum UploadedMediaType {
+  IMAGE
+  DOCUMENT
+}
+
+enum UploadedMediaPurpose {
+  PROFILE
+  BOOKING_REFERENCE
+  SAFETY_REPORT
+  REVIEW
+}
+
+enum SafetyReportStatus {
+  OPEN
+  IN_REVIEW
+  RESOLVED
+  DISMISSED
+}
+
+enum SafetyReportCategory {
+  INAPPROPRIATE_BEHAVIOR
+  NO_SHOW
+  PAYMENT_ISSUE
+  SAFETY_CONCERN
+  OTHER
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  phone     String?
+  name      String
+  role      UserRole
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  customerProfile CustomerProfile?
+  shopperProfile  ShopperProfile?
+
+  bookingStatusChanges BookingStatusHistory[] @relation("BookingStatusChangedBy")
+  uploadedMedia        UploadedMedia[]        @relation("UploadedBy")
+
+  safetyReportsSubmitted SafetyReport[] @relation("SafetyReportReporter")
+  safetyReportsReceived  SafetyReport[] @relation("SafetyReportReportedUser")
+  safetyReportsAssigned  SafetyReport[] @relation("SafetyReportAssignedAdmin")
+
+  moderatedReviews         Review[]         @relation("ReviewModeratedBy")
+  moderatedReviewResponses ReviewResponse[] @relation("ReviewResponseModeratedBy")
+}
+
+model CustomerProfile {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  city      String?
+  state     String?
+  bio       String?
+  pronouns  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  styleQuizResponses StyleQuizResponse[]
+  bookings           Booking[]
+  reviews            Review[]
+  payments           Payment[]
+  chatThreads        ChatThread[]
+
+  @@index([city, state])
+}
+
+model ShopperProfile {
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  headline           String
+  bio                String?
+  city               String
+  state              String
+  serviceRadiusMiles Int      @default(15)
+  hourlyRateCents    Int
+  currency           String   @default("USD")
+  isActive           Boolean  @default(true)
+  averageRating      Decimal? @db.Decimal(3, 2)
+  reviewCount        Int      @default(0)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  specialties      ShopperSpecialty[]
+  availability     AvailabilitySlot[]
+  bookings         Booking[]
+  reviews          Review[]
+  reviewResponses  ReviewResponse[]
+  chatThreads      ChatThread[]
+  portfolioMedia   UploadedMedia[]
+
+  @@index([city, state])
+  @@index([isActive])
+}
+
+model StyleQuizResponse {
+  id                  String   @id @default(cuid())
+  customerProfileId   String
+  styleGoals          Json
+  preferredOccasions  String[]
+  budgetMinCents      Int?
+  budgetMaxCents      Int?
+  colorPreferences    String[]
+  fitConcerns         String?
+  sizingNotes         String?
+  additionalNotes     String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  customerProfile CustomerProfile @relation(fields: [customerProfileId], references: [id], onDelete: Cascade)
+
+  @@index([customerProfileId])
+}
+
+model ShopperSpecialty {
+  id               String   @id @default(cuid())
+  shopperProfileId String
+  name             String
+  createdAt        DateTime @default(now())
+
+  shopperProfile ShopperProfile @relation(fields: [shopperProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([shopperProfileId, name])
+  @@index([name])
+}
+
+model AvailabilitySlot {
+  id               String   @id @default(cuid())
+  shopperProfileId String
+  startsAt         DateTime
+  endsAt           DateTime
+  timezone         String
+  isRecurring      Boolean  @default(false)
+  recurrenceRule   String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  shopperProfile ShopperProfile @relation(fields: [shopperProfileId], references: [id], onDelete: Cascade)
+
+  @@index([shopperProfileId, startsAt])
+}
+
+model Booking {
+  id                String        @id @default(cuid())
+  customerProfileId String
+  shopperProfileId  String
+  status            BookingStatus @default(REQUESTED)
+  scheduledStartAt  DateTime
+  scheduledEndAt    DateTime
+  timezone          String
+  locationName      String?
+  addressLine1      String?
+  addressLine2      String?
+  city              String
+  state             String
+  postalCode        String?
+  goal              String
+  budgetCents       Int?
+  customerNotes     String?
+  shopperNotes      String?
+  totalPriceCents   Int
+  currency          String        @default("USD")
+  completedAt       DateTime?
+  cancelledAt       DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  customerProfile CustomerProfile @relation(fields: [customerProfileId], references: [id], onDelete: Restrict)
+  shopperProfile  ShopperProfile  @relation(fields: [shopperProfileId], references: [id], onDelete: Restrict)
+
+  statusHistory BookingStatusHistory[]
+  review        Review?
+  payment       Payment?
+  chatThread    ChatThread?
+  uploadedMedia UploadedMedia[]
+  safetyReports SafetyReport[]
+
+  @@index([customerProfileId, scheduledStartAt])
+  @@index([shopperProfileId, scheduledStartAt])
+  @@index([status])
+}
+
+model BookingStatusHistory {
+  id              String        @id @default(cuid())
+  bookingId       String
+  status          BookingStatus
+  changedByUserId String?
+  reason          String?
+  createdAt       DateTime      @default(now())
+
+  booking       Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  changedByUser User?   @relation("BookingStatusChangedBy", fields: [changedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([bookingId, createdAt])
+}
+
+/// The API must enforce that reviews are created only by customers after completed bookings.
+model Review {
+  id                 String           @id @default(cuid())
+  bookingId          String           @unique
+  customerProfileId  String
+  shopperProfileId   String
+  rating             Int
+  body               String
+  moderationStatus   ModerationStatus @default(PENDING)
+  moderationNotes    String?
+  moderatedAt        DateTime?
+  moderatedByUserId  String?
+  publishedAt        DateTime?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  booking          Booking         @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  customerProfile  CustomerProfile @relation(fields: [customerProfileId], references: [id], onDelete: Restrict)
+  shopperProfile   ShopperProfile  @relation(fields: [shopperProfileId], references: [id], onDelete: Restrict)
+  moderatedByUser  User?           @relation("ReviewModeratedBy", fields: [moderatedByUserId], references: [id], onDelete: SetNull)
+  response         ReviewResponse?
+
+  @@index([shopperProfileId, moderationStatus])
+  @@index([customerProfileId])
+}
+
+/// Shoppers can respond to reviews. Responses are moderated before publication.
+model ReviewResponse {
+  id                 String           @id @default(cuid())
+  reviewId           String           @unique
+  shopperProfileId   String
+  body               String
+  moderationStatus   ModerationStatus @default(PENDING)
+  moderationNotes    String?
+  moderatedAt        DateTime?
+  moderatedByUserId  String?
+  publishedAt        DateTime?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  review          Review         @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  shopperProfile  ShopperProfile @relation(fields: [shopperProfileId], references: [id], onDelete: Restrict)
+  moderatedByUser User?          @relation("ReviewResponseModeratedBy", fields: [moderatedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([shopperProfileId, moderationStatus])
+}
+
+model Payment {
+  id                      String          @id @default(cuid())
+  bookingId               String          @unique
+  customerProfileId       String
+  amountCents             Int
+  currency                String          @default("USD")
+  status                  PaymentStatus   @default(PENDING)
+  provider                PaymentProvider @default(STRIPE)
+  providerPaymentIntentId String?         @unique
+  paidAt                  DateTime?
+  refundedAt              DateTime?
+  createdAt               DateTime        @default(now())
+  updatedAt               DateTime        @updatedAt
+
+  booking         Booking         @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  customerProfile CustomerProfile @relation(fields: [customerProfileId], references: [id], onDelete: Restrict)
+
+  @@index([customerProfileId, status])
+}
+
+model ChatThread {
+  id                String   @id @default(cuid())
+  bookingId         String   @unique
+  customerProfileId String
+  shopperProfileId  String
+  lastMessageAt     DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  booking         Booking         @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  customerProfile CustomerProfile @relation(fields: [customerProfileId], references: [id], onDelete: Restrict)
+  shopperProfile  ShopperProfile  @relation(fields: [shopperProfileId], references: [id], onDelete: Restrict)
+
+  @@index([customerProfileId, updatedAt])
+  @@index([shopperProfileId, updatedAt])
+}
+
+model UploadedMedia {
+  id               String               @id @default(cuid())
+  uploadedByUserId String
+  shopperProfileId String?
+  bookingId        String?
+  url              String
+  storageKey       String               @unique
+  mediaType        UploadedMediaType
+  purpose          UploadedMediaPurpose
+  caption          String?
+  moderationStatus ModerationStatus     @default(PENDING)
+  moderationNotes  String?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  uploadedByUser User            @relation("UploadedBy", fields: [uploadedByUserId], references: [id], onDelete: Restrict)
+  shopperProfile ShopperProfile? @relation(fields: [shopperProfileId], references: [id], onDelete: Cascade)
+  booking        Booking?        @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([uploadedByUserId])
+  @@index([shopperProfileId])
+  @@index([bookingId])
+  @@index([moderationStatus])
+}
+
+model SafetyReport {
+  id                 String               @id @default(cuid())
+  reporterUserId     String
+  reportedUserId     String?
+  bookingId          String?
+  assignedAdminId    String?
+  category           SafetyReportCategory
+  description        String
+  status             SafetyReportStatus   @default(OPEN)
+  resolutionNotes    String?
+  resolvedAt         DateTime?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+
+  reporterUser  User     @relation("SafetyReportReporter", fields: [reporterUserId], references: [id], onDelete: Restrict)
+  reportedUser  User?    @relation("SafetyReportReportedUser", fields: [reportedUserId], references: [id], onDelete: SetNull)
+  assignedAdmin User?    @relation("SafetyReportAssignedAdmin", fields: [assignedAdminId], references: [id], onDelete: SetNull)
+  booking       Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+
+  @@index([reporterUserId])
+  @@index([reportedUserId])
+  @@index([status])
+  @@index([bookingId])
+}
