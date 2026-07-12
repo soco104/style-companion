@@ -21,21 +21,22 @@ export function AppTextInput({ label, style, ...props }: AppTextInputProps) {
 
 const styles = StyleSheet.create({
   input: {
-    backgroundColor: theme.colors.card,
+    backgroundColor: theme.colors.cream,
     borderColor: theme.colors.border,
-    borderRadius: 8,
+    borderRadius: theme.radius.md,
     borderWidth: 1,
     color: theme.colors.text,
     fontSize: 16,
-    minHeight: 48,
-    paddingHorizontal: 14,
-    paddingVertical: 10
+    lineHeight: 22,
+    minHeight: 52,
+    paddingHorizontal: 16,
+    paddingVertical: 12
   },
   label: {
-    color: theme.colors.text,
+    color: theme.colors.primaryDark,
     fontSize: 14,
-    fontWeight: "700",
-    marginBottom: 6
+    fontWeight: "800",
+    marginBottom: 7
   },
   wrap: {
     marginBottom: theme.spacing.md

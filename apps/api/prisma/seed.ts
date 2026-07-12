@@ -6,6 +6,8 @@ import {
   PrismaClient,
   SafetyReportCategory,
   SafetyReportStatus,
+  WardrobePhotoUploadedByRole,
+  WardrobePhotoVisibility,
   UploadedMediaPurpose,
   UploadedMediaType,
   UserRole
@@ -26,9 +28,12 @@ async function clearDatabase() {
   await prisma.payment.deleteMany();
   await prisma.chatThread.deleteMany();
   await prisma.uploadedMedia.deleteMany();
+  await prisma.wardrobePhoto.deleteMany();
   await prisma.safetyReport.deleteMany();
   await prisma.bookingStatusHistory.deleteMany();
   await prisma.booking.deleteMany();
+  await prisma.shopperPricingPackage.deleteMany();
+  await prisma.shopperStylePreference.deleteMany();
   await prisma.availabilitySlot.deleteMany();
   await prisma.shopperSpecialty.deleteMany();
   await prisma.styleQuizResponse.deleteMany();
@@ -92,10 +97,35 @@ async function main() {
     }
   });
 
+  const shopperUserTwo = await prisma.user.create({
+    data: {
+      email: "shopper2@stylecompanion.test",
+      name: "Riley Wardrobe",
+      phone: "+15550303030",
+      role: UserRole.SHOPPER,
+      shopperProfile: {
+        create: {
+          headline: "Warm, practical styling for everyday closets",
+          bio: "I focus on low-pressure wardrobe audits and realistic outfit formulas.",
+          city: "Nashville",
+          state: "TN",
+          hourlyRateCents: 7000,
+          serviceRadiusMiles: 12,
+          averageRating: 4.75,
+          reviewCount: 2
+        }
+      }
+    },
+    include: {
+      shopperProfile: true
+    }
+  });
+
   const customerProfile = customerUser.customerProfile;
   const shopperProfile = shopperUser.shopperProfile;
+  const shopperProfileTwo = shopperUserTwo.shopperProfile;
 
-  if (!customerProfile || !shopperProfile) {
+  if (!customerProfile || !shopperProfile || !shopperProfileTwo) {
     throw new Error("Seed profiles were not created.");
   }
 
@@ -104,6 +134,76 @@ async function main() {
       { shopperProfileId: shopperProfile.id, name: "Workwear" },
       { shopperProfileId: shopperProfile.id, name: "Capsule Wardrobes" },
       { shopperProfileId: shopperProfile.id, name: "In-Person Shopping" }
+    ]
+  });
+
+  await prisma.shopperSpecialty.createMany({
+    data: [
+      { shopperProfileId: shopperProfileTwo.id, name: "Closet Edits" },
+      { shopperProfileId: shopperProfileTwo.id, name: "Budget Shopping" }
+    ]
+  });
+
+  const closetRefreshPackage = await prisma.shopperPricingPackage.create({
+    data: {
+      shopperProfileId: shopperProfile.id,
+      title: "Closet Refresh",
+      sessionCount: 2,
+      pricePerSessionCents: 8500,
+      totalPriceCents: 17000,
+      description: "Two focused sessions for editing, outfit planning, and a targeted shopping list.",
+      isActive: true
+    }
+  });
+
+  await prisma.shopperPricingPackage.createMany({
+    data: [
+      {
+        shopperProfileId: shopperProfile.id,
+        title: "Single Shopping Session",
+        sessionCount: 1,
+        pricePerSessionCents: 9500,
+        totalPriceCents: 9500,
+        description: "A single guided shopping session for a specific event or wardrobe gap.",
+        isActive: true
+      },
+      {
+        shopperProfileId: shopperProfile.id,
+        title: "Retired Intro Package",
+        sessionCount: 1,
+        pricePerSessionCents: 6500,
+        totalPriceCents: 6500,
+        description: "Inactive sample package used for validation testing.",
+        isActive: false
+      },
+      {
+        shopperProfileId: shopperProfileTwo.id,
+        title: "Wardrobe Audit",
+        sessionCount: 1,
+        pricePerSessionCents: 7000,
+        totalPriceCents: 7000,
+        description: "A practical closet review with outfit notes and donation guidance.",
+        isActive: true
+      }
+    ]
+  });
+
+  await prisma.shopperStylePreference.createMany({
+    data: [
+      {
+        shopperProfileId: shopperProfile.id,
+        styleTags: ["tailored", "capsule", "workwear"],
+        preferredBrands: ["Madewell", "Everlane", "Quince"],
+        avoidedStyles: ["dry clean only", "uncomfortable heels"],
+        notes: "Best for customers who want polished outfits with repeatable formulas."
+      },
+      {
+        shopperProfileId: shopperProfileTwo.id,
+        styleTags: ["casual", "size-inclusive", "budget-conscious"],
+        preferredBrands: ["Target", "Old Navy", "Nordstrom Rack"],
+        avoidedStyles: ["high maintenance fabrics"],
+        notes: "Best for customers who want approachable outfit building from pieces they already own."
+      }
     ]
   });
 
@@ -120,6 +220,20 @@ async function main() {
         startsAt: daysFromNow(5, 16),
         endsAt: daysFromNow(5, 19),
         timezone: "America/Chicago"
+      },
+      {
+        shopperProfileId: shopperProfileTwo.id,
+        startsAt: daysFromNow(4, 14),
+        endsAt: daysFromNow(4, 17),
+        timezone: "America/Chicago"
+      },
+      {
+        shopperProfileId: shopperProfileTwo.id,
+        startsAt: daysFromNow(-7, 15),
+        endsAt: daysFromNow(-7, 17),
+        timezone: "America/Chicago",
+        isRecurring: true,
+        recurrenceRule: "FREQ=WEEKLY;BYDAY=MO,WE;INTERVAL=1"
       }
     ]
   });
@@ -145,6 +259,7 @@ async function main() {
     data: {
       customerProfileId: customerProfile.id,
       shopperProfileId: shopperProfile.id,
+      pricingPackageId: closetRefreshPackage.id,
       status: BookingStatus.COMPLETED,
       scheduledStartAt: daysFromNow(-7, 16),
       scheduledEndAt: daysFromNow(-7, 18),
@@ -254,6 +369,60 @@ async function main() {
         purpose: UploadedMediaPurpose.BOOKING_REFERENCE,
         caption: "Reference outfit for the shopping session",
         moderationStatus: ModerationStatus.PENDING
+      }
+    ]
+  });
+
+  await prisma.wardrobePhoto.createMany({
+    data: [
+      {
+        userId: customerUser.id,
+        bookingId: booking.id,
+        url: "https://example.test/media/wardrobe/maya-navy-blazer.jpg",
+        storageKey: "dev/wardrobe/maya-navy-blazer.jpg",
+        title: "Navy blazer",
+        caption: "Current work blazer to build outfits around.",
+        category: "outerwear",
+        visibility: WardrobePhotoVisibility.BOOKING_SHARED,
+        uploadedByRole: WardrobePhotoUploadedByRole.CUSTOMER,
+        tags: ["blazer", "workwear", "navy"],
+        metadata: {
+          originalFilename: "navy-blazer.jpg",
+          source: "seed-placeholder"
+        },
+        moderationStatus: ModerationStatus.APPROVED
+      },
+      {
+        userId: customerUser.id,
+        url: "https://example.test/media/wardrobe/maya-green-dress.jpg",
+        storageKey: "dev/wardrobe/maya-green-dress.jpg",
+        title: "Green dress",
+        caption: "Comfortable dress that needs styling ideas.",
+        category: "dresses",
+        visibility: WardrobePhotoVisibility.PRIVATE,
+        uploadedByRole: WardrobePhotoUploadedByRole.CUSTOMER,
+        tags: ["dress", "olive"],
+        metadata: {
+          originalFilename: "green-dress.jpg",
+          source: "seed-placeholder"
+        },
+        moderationStatus: ModerationStatus.PENDING
+      },
+      {
+        userId: shopperUser.id,
+        url: "https://example.test/media/wardrobe/jordan-capsule-board.jpg",
+        storageKey: "dev/wardrobe/jordan-capsule-board.jpg",
+        title: "Capsule board",
+        caption: "Example outfit board for public shopper profile.",
+        category: "portfolio",
+        visibility: WardrobePhotoVisibility.PUBLIC_PROFILE,
+        uploadedByRole: WardrobePhotoUploadedByRole.SHOPPER,
+        tags: ["portfolio", "capsule", "workwear"],
+        metadata: {
+          originalFilename: "capsule-board.jpg",
+          source: "seed-placeholder"
+        },
+        moderationStatus: ModerationStatus.APPROVED
       }
     ]
   });

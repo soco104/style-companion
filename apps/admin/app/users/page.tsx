@@ -2,6 +2,7 @@ import { ApiNotice } from "../components/api-notice";
 import { EmptyState } from "../components/empty-state";
 import { StatusBadge } from "../components/status-badge";
 import { adminApi, formatDateTime } from "../lib/api";
+import { updateCustomerFeeWaiverAction, updateShopperFeeWaiverAction } from "../lib/actions";
 
 export default async function UsersPage() {
   const users = await adminApi.users();
@@ -28,6 +29,7 @@ export default async function UsersPage() {
                 <th>Email</th>
                 <th>Role</th>
                 <th>Profiles</th>
+                <th>Fee waivers</th>
                 <th>Created</th>
               </tr>
             </thead>
@@ -44,6 +46,56 @@ export default async function UsersPage() {
                     {user.customerProfile && user.shopperProfile ? ", " : ""}
                     {user.shopperProfile ? "Shopper" : ""}
                     {!user.customerProfile && !user.shopperProfile ? "None" : ""}
+                  </td>
+                  <td>
+                    <div className="stacked-actions">
+                      {user.customerProfile ? (
+                        <form action={updateCustomerFeeWaiverAction} className="inline-form">
+                          <input name="id" type="hidden" value={user.customerProfile.id} />
+                          <input name="feeWaivedByUserId" type="hidden" value={user.id} />
+                          <input
+                            name="feesWaived"
+                            type="hidden"
+                            value={user.customerProfile.feesWaived ? "false" : "true"}
+                          />
+                          <label>
+                            Buyer fee waiver
+                            <input
+                              name="feeWaiverReason"
+                              placeholder="Reason"
+                              defaultValue={user.customerProfile.feeWaiverReason ?? ""}
+                            />
+                          </label>
+                          <button type="submit">
+                            {user.customerProfile.feesWaived ? "Remove buyer waiver" : "Waive buyer fees"}
+                          </button>
+                          {user.customerProfile.feesWaived ? <StatusBadge>WAIVED</StatusBadge> : null}
+                        </form>
+                      ) : null}
+                      {user.shopperProfile ? (
+                        <form action={updateShopperFeeWaiverAction} className="inline-form">
+                          <input name="id" type="hidden" value={user.shopperProfile.id} />
+                          <input name="feeWaivedByUserId" type="hidden" value={user.id} />
+                          <input
+                            name="feesWaived"
+                            type="hidden"
+                            value={user.shopperProfile.feesWaived ? "false" : "true"}
+                          />
+                          <label>
+                            Shopper fee waiver
+                            <input
+                              name="feeWaiverReason"
+                              placeholder="Reason"
+                              defaultValue={user.shopperProfile.feeWaiverReason ?? ""}
+                            />
+                          </label>
+                          <button type="submit">
+                            {user.shopperProfile.feesWaived ? "Remove shopper waiver" : "Waive shopper fees"}
+                          </button>
+                          {user.shopperProfile.feesWaived ? <StatusBadge>WAIVED</StatusBadge> : null}
+                        </form>
+                      ) : null}
+                    </div>
                   </td>
                   <td>{formatDateTime(user.createdAt)}</td>
                 </tr>

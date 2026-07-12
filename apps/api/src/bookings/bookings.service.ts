@@ -9,6 +9,7 @@ import { TransitionBookingDto } from "./dto/transition-booking.dto";
 const bookingInclude = {
   customerProfile: { include: { user: true } },
   payment: true,
+  pricingPackage: true,
   review: true,
   shopperProfile: { include: { user: true } },
   statusHistory: { orderBy: { createdAt: "asc" as const } }
@@ -19,7 +20,8 @@ export class BookingsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(dto: CreateBookingDto) {
-    this.assertValidSchedule(dto.scheduledStartAt, dto.scheduledEndAt);
+    const schedule = this.getSchedule(dto);
+    this.assertValidSchedule(schedule.startsAt, schedule.endsAt);
 
     const [customerProfile, shopperProfile] = await Promise.all([
       this.prisma.customerProfile.findUnique({
@@ -48,17 +50,41 @@ export class BookingsService {
       throw new BadRequestException("Customers cannot book their own shopper profile.");
     }
 
-    this.assertWithinAvailability(shopperProfile.availability, dto.scheduledStartAt, dto.scheduledEndAt);
+    const pricingPackage = dto.pricingPackageId ? await this.findBookablePricingPackage(dto.pricingPackageId) : null;
+
+    if (pricingPackage && pricingPackage.shopperProfileId !== dto.shopperProfileId) {
+      throw new BadRequestException("Pricing package does not belong to the selected shopper.");
+    }
+
+    if (!pricingPackage && dto.totalPriceCents === undefined) {
+      throw new BadRequestException("A pricing package or total price is required.");
+    }
+
+    this.assertWithinAvailability(shopperProfile.availability, schedule.startsAt, schedule.endsAt);
     await this.assertNoAcceptedOverlap({
       customerProfileId: dto.customerProfileId,
-      endsAt: dto.scheduledEndAt,
+      endsAt: schedule.endsAt,
       shopperProfileId: dto.shopperProfileId,
-      startsAt: dto.scheduledStartAt
+      startsAt: schedule.startsAt
     });
 
     return this.prisma.booking.create({
       data: {
-        ...dto,
+        addressLine1: dto.addressLine1,
+        addressLine2: dto.addressLine2,
+        budgetCents: dto.budgetCents,
+        city: dto.city,
+        currency: dto.currency,
+        customerNotes: dto.customerNotes,
+        customerProfileId: dto.customerProfileId,
+        goal: dto.goal,
+        locationName: dto.locationName,
+        postalCode: dto.postalCode,
+        pricingPackageId: pricingPackage?.id,
+        scheduledEndAt: schedule.endsAt,
+        scheduledStartAt: schedule.startsAt,
+        shopperProfileId: dto.shopperProfileId,
+        state: dto.state,
         status: BookingStatus.REQUESTED,
         statusHistory: {
           create: {
@@ -66,7 +92,9 @@ export class BookingsService {
             reason: "Booking requested.",
             status: BookingStatus.REQUESTED
           }
-        }
+        },
+        timezone: dto.timezone,
+        totalPriceCents: pricingPackage?.totalPriceCents ?? dto.totalPriceCents!
       },
       include: bookingInclude
     });
@@ -122,6 +150,33 @@ export class BookingsService {
     if (endsAt <= startsAt) {
       throw new BadRequestException("Booking end time must be after start time.");
     }
+  }
+
+  private getSchedule(dto: CreateBookingDto) {
+    const startsAt = dto.scheduledStartAt ?? dto.scheduledStart;
+    const endsAt = dto.scheduledEndAt ?? dto.scheduledEnd;
+
+    if (!startsAt || !endsAt) {
+      throw new BadRequestException("Booking requires a scheduled start and end time.");
+    }
+
+    return { endsAt, startsAt };
+  }
+
+  private async findBookablePricingPackage(pricingPackageId: string) {
+    const pricingPackage = await this.prisma.shopperPricingPackage.findUnique({
+      where: { id: pricingPackageId }
+    });
+
+    if (!pricingPackage) {
+      throw new NotFoundException("Pricing package not found.");
+    }
+
+    if (!pricingPackage.isActive) {
+      throw new BadRequestException("Inactive pricing packages cannot be booked.");
+    }
+
+    return pricingPackage;
   }
 
   private assertWithinAvailability(slots: AvailabilitySlot[], startsAt: Date, endsAt: Date) {

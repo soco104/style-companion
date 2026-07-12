@@ -47,6 +47,7 @@ export type StyleQuizInput = {
 
 export type ShopperMatch = {
   id: string;
+  userId?: string;
   name: string;
   headline: string;
   bio: string;
@@ -60,11 +61,135 @@ export type ShopperMatch = {
   specialties: string[];
 };
 
+export type ShopperMatchSearchInput = {
+  customerProfileId?: string;
+  city?: string;
+  state?: string;
+  specialty?: string;
+  specialties?: string;
+  styleGoals?: string;
+  budgetMaxCents?: number;
+  availableFrom?: string;
+  availableTo?: string;
+  take?: number;
+};
+
+export type ShopperPricingPackage = {
+  id: string;
+  shopperProfileId: string;
+  title: string;
+  sessionCount: number;
+  pricePerSessionCents: number;
+  totalPriceCents: number;
+  description?: string;
+  isActive: boolean;
+};
+
+export type ShopperPricingPackageInput = {
+  ownerUserId?: string;
+  title: string;
+  sessionCount: number;
+  pricePerSessionCents: number;
+  totalPriceCents: number;
+  description?: string;
+  isActive?: boolean;
+};
+
+export type ShopperStylePreference = {
+  id: string;
+  shopperProfileId: string;
+  styleTags: string[];
+  preferredBrands: string[];
+  avoidedStyles: string[];
+  notes?: string;
+};
+
+export type ShopperStylePreferenceInput = {
+  ownerUserId?: string;
+  styleTags: string[];
+  preferredBrands?: string[];
+  avoidedStyles?: string[];
+  notes?: string;
+};
+
+export type AvailabilitySlot = {
+  id: string;
+  shopperProfileId?: string;
+  startsAt: string;
+  endsAt: string;
+  timezone: string;
+  isRecurring?: boolean;
+  recurrenceRule?: string | null;
+  sourceSlotId?: string;
+};
+
+export type AvailabilitySlotInput = {
+  shopperProfileId: string;
+  ownerUserId?: string;
+  startsAt: string;
+  endsAt: string;
+  timezone: string;
+  isRecurring?: boolean;
+  recurrenceRule?: string;
+};
+
+export type SchedulingAvailability = {
+  shopperProfileId: string;
+  from: string;
+  to: string;
+  slots: AvailabilitySlot[];
+  availableSlots: AvailabilitySlot[];
+  acceptedBookings: Array<{
+    bookingId: string;
+    startsAt: string;
+    endsAt: string;
+  }>;
+};
+
+export type WardrobePhoto = {
+  id: string;
+  userId: string;
+  bookingId?: string | null;
+  url: string;
+  storageKey: string;
+  title?: string;
+  caption?: string;
+  category: string;
+  visibility: "PRIVATE" | "BOOKING_SHARED" | "PUBLIC_PROFILE";
+  uploadedByRole: "CUSTOMER" | "SHOPPER" | "ADMIN";
+  tags: string[];
+  metadata?: Record<string, unknown>;
+};
+
+export type WardrobePhotoInput = {
+  userId?: string;
+  uploadedByUserId?: string;
+  bookingId?: string;
+  url: string;
+  storageKey: string;
+  title?: string;
+  caption?: string;
+  category: string;
+  visibility?: "PRIVATE" | "BOOKING_SHARED" | "PUBLIC_PROFILE";
+  uploadedByRole: "CUSTOMER" | "SHOPPER" | "ADMIN";
+  tags?: string[];
+  metadata?: Record<string, unknown>;
+};
+
+export type WardrobePhotoUpdateInput = Partial<
+  Pick<WardrobePhotoInput, "caption" | "category" | "metadata" | "tags" | "title" | "visibility">
+> & {
+  uploadedByUserId?: string;
+};
+
 export type BookingInput = {
   customerProfileId: string;
   shopperProfileId: string;
-  scheduledStartAt: string;
-  scheduledEndAt: string;
+  pricingPackageId?: string;
+  scheduledStartAt?: string;
+  scheduledEndAt?: string;
+  scheduledStart?: string;
+  scheduledEnd?: string;
   timezone: string;
   locationName?: string;
   city: string;
@@ -73,7 +198,7 @@ export type BookingInput = {
   goal: string;
   budgetCents?: number;
   customerNotes?: string;
-  totalPriceCents: number;
+  totalPriceCents?: number;
   currency?: string;
 };
 
@@ -83,6 +208,7 @@ export type BookingSummary = {
   shopperName: string;
   scheduledStartAt: string;
   locationName?: string;
+  pricingPackageId?: string;
   totalPriceCents: number;
 };
 

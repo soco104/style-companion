@@ -2,6 +2,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Text } from "react-native";
 
 import { AppButton } from "../components/AppButton";
+import { getCurrentSession } from "../api/sessionStore";
 import { Card } from "../components/Card";
 import { Screen } from "../components/Screen";
 import type { RootStackParamList } from "../navigation/types";
@@ -12,6 +13,7 @@ type Props = NativeStackScreenProps<RootStackParamList, "BookingStatus">;
 
 export function BookingStatusScreen({ navigation, route }: Props) {
   const { booking, customerProfileId, shopper } = route.params;
+  const session = getCurrentSession();
 
   return (
     <Screen
@@ -28,6 +30,23 @@ export function BookingStatusScreen({ navigation, route }: Props) {
       <AppButton onPress={() => navigation.navigate("ChatPlaceholder", { booking, shopper })}>
         Open chat
       </AppButton>
+      {session ? (
+        <AppButton
+          variant="secondary"
+          onPress={() =>
+            navigation.navigate("WardrobeGallery", {
+              bookingId: booking.id,
+              canAdd: true,
+              ownerRole: session.user.role === "SHOPPER" ? "SHOPPER" : "CUSTOMER",
+              title: "Booking wardrobe photos",
+              userId: session.user.id,
+              visibility: "BOOKING_SHARED"
+            })
+          }
+        >
+          Booking wardrobe photos
+        </AppButton>
+      ) : null}
       <AppButton
         variant="secondary"
         onPress={() => navigation.navigate("Review", { booking, customerProfileId, shopper })}

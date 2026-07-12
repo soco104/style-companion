@@ -52,6 +52,7 @@ enum UploadedMediaType {
 enum UploadedMediaPurpose {
   PROFILE
   BOOKING_REFERENCE
+  WARDROBE
   SAFETY_REPORT
   REVIEW
 }
@@ -71,6 +72,18 @@ enum SafetyReportCategory {
   OTHER
 }
 
+enum WardrobePhotoVisibility {
+  PRIVATE
+  BOOKING_SHARED
+  PUBLIC_PROFILE
+}
+
+enum WardrobePhotoUploadedByRole {
+  CUSTOMER
+  SHOPPER
+  ADMIN
+}
+
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -85,6 +98,7 @@ model User {
 
   bookingStatusChanges BookingStatusHistory[] @relation("BookingStatusChangedBy")
   uploadedMedia        UploadedMedia[]        @relation("UploadedBy")
+  wardrobePhotos       WardrobePhoto[]        @relation("WardrobePhotoOwner")
 
   safetyReportsSubmitted SafetyReport[] @relation("SafetyReportReporter")
   safetyReportsReceived  SafetyReport[] @relation("SafetyReportReportedUser")
@@ -95,14 +109,18 @@ model User {
 }
 
 model CustomerProfile {
-  id        String   @id @default(cuid())
-  userId    String   @unique
-  city      String?
-  state     String?
-  bio       String?
-  pronouns  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                String    @id @default(cuid())
+  userId            String    @unique
+  city              String?
+  state             String?
+  bio               String?
+  pronouns          String?
+  feesWaived        Boolean   @default(false)
+  feeWaiverReason   String?
+  feeWaivedAt       DateTime?
+  feeWaivedByUserId String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -128,6 +146,10 @@ model ShopperProfile {
   isActive           Boolean  @default(true)
   averageRating      Decimal? @db.Decimal(3, 2)
   reviewCount        Int      @default(0)
+  feesWaived         Boolean  @default(false)
+  feeWaiverReason    String?
+  feeWaivedAt        DateTime?
+  feeWaivedByUserId  String?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
@@ -135,6 +157,8 @@ model ShopperProfile {
 
   specialties      ShopperSpecialty[]
   availability     AvailabilitySlot[]
+  pricingPackages  ShopperPricingPackage[]
+  stylePreferences ShopperStylePreference[]
   bookings         Booking[]
   reviews          Review[]
   reviewResponses  ReviewResponse[]
@@ -176,6 +200,39 @@ model ShopperSpecialty {
   @@index([name])
 }
 
+model ShopperPricingPackage {
+  id                    String   @id @default(cuid())
+  shopperProfileId      String
+  title                 String
+  sessionCount          Int
+  pricePerSessionCents  Int
+  totalPriceCents       Int
+  description           String?
+  isActive              Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  shopperProfile ShopperProfile @relation(fields: [shopperProfileId], references: [id], onDelete: Cascade)
+  bookings       Booking[]
+
+  @@index([shopperProfileId, isActive])
+}
+
+model ShopperStylePreference {
+  id               String   @id @default(cuid())
+  shopperProfileId String
+  styleTags        String[] @default([])
+  preferredBrands  String[] @default([])
+  avoidedStyles    String[] @default([])
+  notes            String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  shopperProfile ShopperProfile @relation(fields: [shopperProfileId], references: [id], onDelete: Cascade)
+
+  @@index([shopperProfileId])
+}
+
 model AvailabilitySlot {
   id               String   @id @default(cuid())
   shopperProfileId String
@@ -196,6 +253,7 @@ model Booking {
   id                String        @id @default(cuid())
   customerProfileId String
   shopperProfileId  String
+  pricingPackageId  String?
   status            BookingStatus @default(REQUESTED)
   scheduledStartAt  DateTime
   scheduledEndAt    DateTime
@@ -219,16 +277,21 @@ model Booking {
 
   customerProfile CustomerProfile @relation(fields: [customerProfileId], references: [id], onDelete: Restrict)
   shopperProfile  ShopperProfile  @relation(fields: [shopperProfileId], references: [id], onDelete: Restrict)
+  pricingPackage ShopperPricingPackage? @relation(fields: [pricingPackageId], references: [id], onDelete: Restrict)
 
   statusHistory BookingStatusHistory[]
   review        Review?
   payment       Payment?
   chatThread    ChatThread?
   uploadedMedia UploadedMedia[]
+  wardrobePhotos WardrobePhoto[]
   safetyReports SafetyReport[]
 
   @@index([customerProfileId, scheduledStartAt])
   @@index([shopperProfileId, scheduledStartAt])
+  @@index([pricingPackageId])
+  @@index([shopperProfileId, status, scheduledStartAt, scheduledEndAt])
+  @@index([customerProfileId, status, scheduledStartAt, scheduledEndAt])
   @@index([status])
 }
 
@@ -352,6 +415,33 @@ model UploadedMedia {
   @@index([uploadedByUserId])
   @@index([shopperProfileId])
   @@index([bookingId])
+  @@index([moderationStatus])
+}
+
+model WardrobePhoto {
+  id               String                      @id @default(cuid())
+  userId           String
+  bookingId        String?
+  url              String
+  storageKey       String           @unique
+  title            String?
+  caption          String?
+  category         String
+  visibility       WardrobePhotoVisibility     @default(PRIVATE)
+  uploadedByRole   WardrobePhotoUploadedByRole
+  tags             String[]         @default([])
+  metadata         Json?
+  moderationStatus ModerationStatus            @default(PENDING)
+  createdAt        DateTime                    @default(now())
+  updatedAt        DateTime                    @updatedAt
+
+  user    User     @relation("WardrobePhotoOwner", fields: [userId], references: [id], onDelete: Cascade)
+  booking Booking? @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([bookingId])
+  @@index([visibility])
+  @@index([uploadedByRole])
   @@index([moderationStatus])
 }
 

@@ -23,21 +23,23 @@ export function ChoicePill({ label, onPress, selected }: ChoicePillProps) {
 const styles = StyleSheet.create({
   label: {
     color: theme.colors.text,
-    fontWeight: "700"
+    fontSize: 14,
+    fontWeight: "800"
   },
   pill: {
-    backgroundColor: theme.colors.card,
+    backgroundColor: theme.colors.cream,
     borderColor: theme.colors.border,
-    borderRadius: 999,
+    borderRadius: theme.radius.pill,
     borderWidth: 1,
     marginBottom: theme.spacing.sm,
     marginRight: theme.spacing.sm,
-    paddingHorizontal: 14,
-    paddingVertical: 10
+    minHeight: 44,
+    paddingHorizontal: 15,
+    paddingVertical: 11
   },
   selected: {
     backgroundColor: theme.colors.softPrimary,
-    borderColor: theme.colors.primary
+    borderColor: theme.colors.clay
   },
   selectedLabel: {
     color: theme.colors.primaryDark

@@ -31,3 +31,42 @@ export async function updateSafetyReportAction(formData: FormData) {
   revalidatePath("/safety-reports");
   revalidatePath("/");
 }
+
+export async function updateCustomerFeeWaiverAction(formData: FormData) {
+  const id = String(formData.get("id") ?? "");
+  const feesWaived = String(formData.get("feesWaived") ?? "") === "true";
+  const feeWaiverReason = String(formData.get("feeWaiverReason") ?? "");
+  const feeWaivedByUserId = String(formData.get("feeWaivedByUserId") ?? "");
+
+  if (!id) {
+    return;
+  }
+
+  await adminApi.updateCustomerFeeWaiver(id, {
+    feeWaivedByUserId: feeWaivedByUserId || undefined,
+    feeWaiverReason: feeWaiverReason || undefined,
+    feesWaived
+  });
+  revalidatePath("/users");
+  revalidatePath("/");
+}
+
+export async function updateShopperFeeWaiverAction(formData: FormData) {
+  const id = String(formData.get("id") ?? "");
+  const feesWaived = String(formData.get("feesWaived") ?? "") === "true";
+  const feeWaiverReason = String(formData.get("feeWaiverReason") ?? "");
+  const feeWaivedByUserId = String(formData.get("feeWaivedByUserId") ?? "");
+
+  if (!id) {
+    return;
+  }
+
+  await adminApi.updateShopperFeeWaiver(id, {
+    feeWaivedByUserId: feeWaivedByUserId || undefined,
+    feeWaiverReason: feeWaiverReason || undefined,
+    feesWaived
+  });
+  revalidatePath("/users");
+  revalidatePath("/shoppers");
+  revalidatePath("/");
+}

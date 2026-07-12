@@ -1,5 +1,5 @@
 import { Type } from "class-transformer";
-import { IsInt, IsOptional, IsString, Min } from "class-validator";
+import { IsDateString, IsInt, IsOptional, IsString, Min } from "class-validator";
 import { ApiPropertyOptional } from "@nestjs/swagger";
 
 export class MatchQueryDto {
@@ -39,6 +39,16 @@ export class MatchQueryDto {
   @Min(0)
   @Type(() => Number)
   budgetMaxCents?: number;
+
+  @ApiPropertyOptional({ description: "Only include shoppers with availability after this ISO timestamp." })
+  @IsDateString()
+  @IsOptional()
+  availableFrom?: string;
+
+  @ApiPropertyOptional({ description: "Only include shoppers with availability before this ISO timestamp." })
+  @IsDateString()
+  @IsOptional()
+  availableTo?: string;
 
   @ApiPropertyOptional({ default: 20, minimum: 1 })
   @IsInt()

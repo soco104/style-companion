@@ -1,5 +1,5 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { Text } from "react-native";
+import { Text, View } from "react-native";
 
 import { AppButton } from "../components/AppButton";
 import { Card } from "../components/Card";
@@ -16,6 +16,12 @@ export function WelcomeScreen({ navigation }: Props) {
       title="Shop smarter with a local style guide."
       subtitle="Get in-person wardrobe help from guides who teach you how to shop and style yourself."
     >
+      <View style={screenStyles.tonalPanel}>
+        <Text style={screenStyles.meta}>Warm, practical, personal</Text>
+        <Text style={screenStyles.bodyText}>
+          A calmer way to plan outfits, understand your closet, and book hands-on support nearby.
+        </Text>
+      </View>
       <Card>
         <Text style={screenStyles.cardTitle}>MVP preview</Text>
         <Text style={screenStyles.bodyText}>

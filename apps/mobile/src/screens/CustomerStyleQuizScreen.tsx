@@ -1,9 +1,10 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useState } from "react";
-import { View } from "react-native";
+import { Text, View } from "react-native";
 
 import { AppButton } from "../components/AppButton";
 import { AppTextInput } from "../components/AppTextInput";
+import { Card } from "../components/Card";
 import { ChoicePill } from "../components/ChoicePill";
 import { Screen } from "../components/Screen";
 import type { RootStackParamList } from "../navigation/types";
@@ -48,30 +49,36 @@ export function CustomerStyleQuizScreen({ navigation, route }: Props) {
       title="Tell us what you want help with."
       subtitle="A few practical details help us surface guides who fit your goals."
     >
-      <AppTextInput label="Primary goal" multiline onChangeText={setGoals} value={goals} />
-      <View style={screenStyles.pillRow}>
-        {occasions.map((occasion) => (
-          <ChoicePill
-            key={occasion}
-            label={occasion}
-            onPress={() => setSelectedOccasions((current) => toggle(current, occasion))}
-            selected={selectedOccasions.includes(occasion)}
-          />
-        ))}
-      </View>
-      <View style={screenStyles.pillRow}>
-        {colors.map((color) => (
-          <ChoicePill
-            key={color}
-            label={color}
-            onPress={() => setSelectedColors((current) => toggle(current, color))}
-            selected={selectedColors.includes(color)}
-          />
-        ))}
-      </View>
-      <AppTextInput keyboardType="number-pad" label="Max shopping budget" onChangeText={setBudget} value={budget} />
-      <AppTextInput label="Fit concerns" multiline onChangeText={setFitConcerns} value={fitConcerns} />
-      <AppTextInput label="Sizing notes" multiline onChangeText={setSizingNotes} value={sizingNotes} />
+      <Card>
+        <Text style={screenStyles.meta}>Style direction</Text>
+        <AppTextInput label="Primary goal" multiline onChangeText={setGoals} value={goals} />
+        <View style={screenStyles.pillRow}>
+          {occasions.map((occasion) => (
+            <ChoicePill
+              key={occasion}
+              label={occasion}
+              onPress={() => setSelectedOccasions((current) => toggle(current, occasion))}
+              selected={selectedOccasions.includes(occasion)}
+            />
+          ))}
+        </View>
+        <View style={screenStyles.pillRow}>
+          {colors.map((color) => (
+            <ChoicePill
+              key={color}
+              label={color}
+              onPress={() => setSelectedColors((current) => toggle(current, color))}
+              selected={selectedColors.includes(color)}
+            />
+          ))}
+        </View>
+      </Card>
+      <Card>
+        <Text style={screenStyles.meta}>Fit and budget</Text>
+        <AppTextInput keyboardType="number-pad" label="Max shopping budget" onChangeText={setBudget} value={budget} />
+        <AppTextInput label="Fit concerns" multiline onChangeText={setFitConcerns} value={fitConcerns} />
+        <AppTextInput label="Sizing notes" multiline onChangeText={setSizingNotes} value={sizingNotes} />
+      </Card>
       <AppButton onPress={continueToProfile}>Continue to profile</AppButton>
     </Screen>
   );

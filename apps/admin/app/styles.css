@@ -298,6 +298,22 @@ dd {
   padding-top: 14px;
 }
 
+.inline-form,
+.stacked-actions {
+  display: grid;
+  gap: 8px;
+}
+
+.inline-form {
+  border-bottom: 1px solid #f3f4f6;
+  padding-bottom: 12px;
+}
+
+.inline-form:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
 label {
   color: #374151;
   display: grid;
@@ -345,7 +361,8 @@ button.secondary {
 .badge-accepted,
 .badge-completed,
 .badge-resolved,
-.badge-admin {
+.badge-admin,
+.badge-pass {
   background: #d1fae5;
   color: #065f46;
 }
@@ -353,7 +370,8 @@ button.secondary {
 .badge-pending,
 .badge-requested,
 .badge-open,
-.badge-customer {
+.badge-customer,
+.badge-waived {
   background: #fef3c7;
   color: #92400e;
 }
@@ -362,7 +380,8 @@ button.secondary {
 .badge-rejected,
 .badge-declined,
 .badge-cancelled,
-.badge-dismissed {
+.badge-dismissed,
+.badge-fail {
   background: #fee2e2;
   color: #991b1b;
 }
@@ -370,7 +389,8 @@ button.secondary {
 .badge-flagged,
 .badge-disputed,
 .badge-in-review,
-.badge-shopper {
+.badge-shopper,
+.badge-warn {
   background: #dbeafe;
   color: #1e40af;
 }

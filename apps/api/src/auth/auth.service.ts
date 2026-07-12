@@ -23,7 +23,7 @@ export class AuthService {
     }
 
     return {
-      token: `dev-token:${user.id}`,
+      token: `dev:${user.id}:${user.email}`,
       user
     };
   }

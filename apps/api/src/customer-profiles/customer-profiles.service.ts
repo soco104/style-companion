@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 
 import { PaginationQueryDto } from "../common/dto/pagination-query.dto";
+import { UpdateProfileFeeWaiverDto } from "../common/dto/update-profile-fee-waiver.dto";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateCustomerProfileDto } from "./dto/create-customer-profile.dto";
 import { UpdateCustomerProfileDto } from "./dto/update-customer-profile.dto";
@@ -43,6 +44,18 @@ export class CustomerProfilesService {
   update(id: string, dto: UpdateCustomerProfileDto) {
     return this.prisma.customerProfile.update({
       data: dto,
+      where: { id }
+    });
+  }
+
+  updateFeeWaiver(id: string, dto: UpdateProfileFeeWaiverDto) {
+    return this.prisma.customerProfile.update({
+      data: {
+        feesWaived: dto.feesWaived,
+        feeWaivedAt: dto.feesWaived ? new Date() : null,
+        feeWaivedByUserId: dto.feesWaived ? dto.feeWaivedByUserId : null,
+        feeWaiverReason: dto.feesWaived ? dto.feeWaiverReason : null
+      },
       where: { id }
     });
   }
