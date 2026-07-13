@@ -52,6 +52,20 @@ export function CustomerProfileScreen({ navigation, route }: Props) {
       <AppTextInput autoCapitalize="characters" label="State" onChangeText={setState} value={state} />
       <AppTextInput label="Pronouns" onChangeText={setPronouns} value={pronouns} />
       <AppTextInput label="Profile note" multiline onChangeText={setBio} value={bio} />
+      <AppButton
+        variant="secondary"
+        onPress={() =>
+          navigation.navigate("WardrobeGallery", {
+            canAdd: true,
+            ownerRole: "CUSTOMER",
+            title: "My wardrobe",
+            userId: route.params.userId,
+            visibility: "PRIVATE"
+          })
+        }
+      >
+        Add wardrobe photos
+      </AppButton>
       {error ? <Text style={screenStyles.error}>{error}</Text> : null}
       <AppButton loading={loading} onPress={submit}>
         Find style guides

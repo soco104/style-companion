@@ -19,6 +19,7 @@ export function RoleSelectionScreen({ navigation, route }: Props) {
       subtitle="Choose the path you want to set up first. You can refine this later in account settings."
     >
       <Card>
+        <Text style={screenStyles.meta}>Personal wardrobe support</Text>
         <Text style={screenStyles.cardTitle}>Customer</Text>
         <Text style={screenStyles.bodyText}>
           Take the style quiz, create your profile, and match with local style guides.
@@ -28,6 +29,7 @@ export function RoleSelectionScreen({ navigation, route }: Props) {
         </AppButton>
       </Card>
       <Card>
+        <Text style={screenStyles.meta}>Local styling practice</Text>
         <Text style={screenStyles.cardTitle}>Style guide</Text>
         <Text style={screenStyles.bodyText}>
           Build a shopper profile so customers can learn your specialties and request sessions.

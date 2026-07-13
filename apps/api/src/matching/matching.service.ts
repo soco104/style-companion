@@ -13,11 +13,19 @@ export class MatchingService {
     const where: Prisma.ShopperProfileWhereInput = {
       isActive: true
     };
+    const availabilityWindow = buildAvailabilityWindow(query);
+
+    if (availabilityWindow) {
+      where.availability = {
+        some: availabilityWindow
+      };
+    }
 
     const shoppers = await this.prisma.shopperProfile.findMany({
       include: {
         availability: true,
         specialties: true,
+        stylePreferences: true,
         user: true
       },
       where
@@ -75,10 +83,25 @@ export class MatchingService {
   }
 }
 
+function buildAvailabilityWindow(query: MatchQueryDto): Prisma.AvailabilitySlotWhereInput | undefined {
+  if (!query.availableFrom && !query.availableTo) {
+    return undefined;
+  }
+
+  const from = query.availableFrom ? new Date(query.availableFrom) : undefined;
+  const to = query.availableTo ? new Date(query.availableTo) : undefined;
+
+  return {
+    ...(from ? { endsAt: { gt: from } } : {}),
+    ...(to ? { startsAt: { lt: to } } : {})
+  };
+}
+
 type ShopperForMatching = Prisma.ShopperProfileGetPayload<{
   include: {
     availability: true;
     specialties: true;
+    stylePreferences: true;
     user: true;
   };
 }>;
@@ -97,16 +120,18 @@ type ScorePart = {
 };
 
 const weights = {
-  availability: 0.2,
+  availability: 0.18,
   budget: 0.1,
-  distance: 0.3,
-  rating: 0.15,
-  specialty: 0.25
+  distance: 0.25,
+  rating: 0.12,
+  specialty: 0.2,
+  stylePreference: 0.15
 };
 
 export function scoreShopperMatch(shopper: ShopperForMatching, context: CustomerMatchContext) {
   const distance = scoreDistance(shopper, context);
   const specialty = scoreSpecialty(shopper, context);
+  const stylePreference = scoreStylePreference(shopper, context);
   const availability = scoreAvailability(shopper);
   const rating = scoreRating(shopper);
   const budget = scoreBudget(shopper, context);
@@ -115,6 +140,7 @@ export function scoreShopperMatch(shopper: ShopperForMatching, context: Customer
     100 *
       (distance.score * weights.distance +
         specialty.score * weights.specialty +
+        stylePreference.score * weights.stylePreference +
         availability.score * weights.availability +
         rating.score * weights.rating +
         budget.score * weights.budget)
@@ -126,10 +152,12 @@ export function scoreShopperMatch(shopper: ShopperForMatching, context: Customer
     city: shopper.city,
     explanation: [
       `Distance: ${distance.explanation}`,
+      `Style fit: ${stylePreference.explanation}`,
       `Specialty: ${specialty.explanation}`,
       `Availability: ${availability.explanation}`,
       `Rating: ${rating.explanation}`,
-      `Budget: ${budget.explanation}`
+      `Budget: ${budget.explanation}`,
+      "Scoring weights: distance 25%, specialty 20%, style fit 15%, availability 18%, rating 12%, budget 10%"
     ],
     headline: shopper.headline,
     hourlyRateCents: shopper.hourlyRateCents,
@@ -138,7 +166,8 @@ export function scoreShopperMatch(shopper: ShopperForMatching, context: Customer
     name: shopper.user.name,
     reviewCount: shopper.reviewCount,
     specialties: shopper.specialties.map((item) => item.name),
-    state: shopper.state
+    state: shopper.state,
+    userId: shopper.userId
   };
 }
 
@@ -209,6 +238,44 @@ function scoreSpecialty(shopper: ShopperForMatching, context: CustomerMatchConte
 
   return {
     explanation: `matched ${unique(matched).join(", ")}`,
+    score
+  };
+}
+
+function scoreStylePreference(shopper: ShopperForMatching, context: CustomerMatchContext): ScorePart {
+  const desiredTerms = normalizeTerms(context.styleGoalTerms);
+
+  if (desiredTerms.length === 0) {
+    return { explanation: "no customer style goals provided; neutral style-fit score", score: 0.5 };
+  }
+
+  const preferredTerms = normalizeTerms(
+    shopper.stylePreferences.flatMap((preference) => [
+      ...preference.styleTags,
+      ...preference.preferredBrands,
+      preference.notes ?? ""
+    ])
+  );
+
+  if (preferredTerms.length === 0) {
+    return { explanation: "no shopper preferred styles listed; neutral style-fit score", score: 0.5 };
+  }
+
+  const matched = desiredTerms.filter((term) =>
+    preferredTerms.some((preferredTerm) => preferredTerm.includes(term) || term.includes(preferredTerm))
+  );
+
+  if (matched.length === 0) {
+    return {
+      explanation: "no overlap between customer style goals and shopper preferred styles",
+      score: 0
+    };
+  }
+
+  const score = Math.min(1, matched.length / Math.max(1, desiredTerms.length));
+
+  return {
+    explanation: `matched preferred styles ${unique(matched).join(", ")}`,
     score
   };
 }
@@ -300,7 +367,7 @@ function parseTerms(value?: string | string[]) {
     return [];
   }
 
-  const values = Array.isArray(value) ? value : value.split(/[,;|]/);
+  const values = Array.isArray(value) ? value : value.split(/[,;|/-]/);
 
   return values
     .flatMap((item) => item.split(/\s+/))

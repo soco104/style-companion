@@ -31,7 +31,7 @@ export class FirebaseAuthService {
   private verifyMockToken(idToken: string): VerifiedFirebaseUser {
     const [prefix, uid, email] = idToken.split(":");
 
-    if (prefix !== "dev" || !uid) {
+    if ((prefix !== "dev" && prefix !== "dev-token") || !uid) {
       throw new UnauthorizedException("Mock Firebase tokens must use dev:<uid>[:email].");
     }
 

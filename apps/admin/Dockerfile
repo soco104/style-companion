@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM node:20-alpine AS deps
+FROM node:24-alpine AS deps
 WORKDIR /app
 RUN corepack enable
 
@@ -16,7 +16,7 @@ WORKDIR /app
 COPY . .
 RUN pnpm --filter @style-companion/admin build
 
-FROM node:20-alpine AS runtime
+FROM node:24-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000

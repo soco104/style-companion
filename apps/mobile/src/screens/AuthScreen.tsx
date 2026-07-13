@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Text } from "react-native";
 
 import { apiClient } from "../api/client";
+import { setCurrentSession } from "../api/sessionStore";
 import { AppButton } from "../components/AppButton";
 import { AppTextInput } from "../components/AppTextInput";
 import { Screen } from "../components/Screen";
@@ -21,6 +22,7 @@ export function AuthScreen({ navigation }: Props) {
     setLoading(true);
     try {
       const session = await apiClient.devLogin(email.trim());
+      setCurrentSession(session);
       navigation.navigate("RoleSelection", { userId: session.user.id });
     } catch {
       setError("We could not sign you in. Check the email and try again.");

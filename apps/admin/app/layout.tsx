@@ -15,7 +15,8 @@ const navItems = [
   { href: "/shoppers", label: "Shopper profiles" },
   { href: "/bookings", label: "Bookings" },
   { href: "/reviews", label: "Reviews" },
-  { href: "/safety-reports", label: "Safety reports" }
+  { href: "/safety-reports", label: "Safety reports" },
+  { href: "/api-tests", label: "API tests" }
 ];
 
 type RootLayoutProps = {

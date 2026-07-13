@@ -15,9 +15,11 @@ export function Screen({ children, eyebrow, subtitle, title }: ScreenProps) {
   return (
     <SafeAreaView style={styles.safe} edges={["bottom", "left", "right"]}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        {eyebrow ? <Text style={styles.eyebrow}>{eyebrow}</Text> : null}
-        {title ? <Text style={styles.title}>{title}</Text> : null}
-        {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+        <View style={styles.header}>
+          {eyebrow ? <Text style={styles.eyebrow}>{eyebrow}</Text> : null}
+          {title ? <Text style={styles.title}>{title}</Text> : null}
+          {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+        </View>
         <View style={styles.body}>{children}</View>
       </ScrollView>
     </SafeAreaView>
@@ -33,7 +35,7 @@ const styles = StyleSheet.create({
     paddingBottom: theme.spacing.xl
   },
   eyebrow: {
-    color: theme.colors.primary,
+    color: theme.colors.primaryDark,
     fontSize: 12,
     fontWeight: "800",
     letterSpacing: 1.1,
@@ -44,17 +46,24 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background,
     flex: 1
   },
+  header: {
+    backgroundColor: theme.colors.cardWarm,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.lg,
+    borderWidth: 1,
+    marginBottom: theme.spacing.lg,
+    padding: theme.spacing.lg
+  },
   subtitle: {
     color: theme.colors.muted,
     fontSize: 16,
-    lineHeight: 24,
-    marginBottom: theme.spacing.lg
+    lineHeight: 25
   },
   title: {
     color: theme.colors.text,
-    fontSize: 32,
+    fontSize: theme.typography.h1,
     fontWeight: "800",
-    lineHeight: 38,
+    lineHeight: 40,
     marginBottom: theme.spacing.sm
   }
 });

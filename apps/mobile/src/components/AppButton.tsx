@@ -33,7 +33,7 @@ export function AppButton({
       ]}
     >
       {loading ? (
-        <ActivityIndicator color={variant === "primary" ? "#ffffff" : theme.colors.primary} />
+        <ActivityIndicator color={variant === "primary" ? theme.colors.cream : theme.colors.primary} />
       ) : (
         <Text style={[styles.label, variant !== "primary" && styles.secondaryLabel]}>{children}</Text>
       )}
@@ -44,12 +44,17 @@ export function AppButton({
 const styles = StyleSheet.create({
   base: {
     alignItems: "center",
-    borderRadius: 8,
+    borderRadius: theme.radius.md,
     borderWidth: 1,
+    elevation: 1,
     justifyContent: "center",
-    minHeight: 48,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: 12
+    minHeight: 52,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: 13,
+    shadowColor: theme.colors.charcoal,
+    shadowOffset: { height: 4, width: 0 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10
   },
   disabled: {
     opacity: 0.55
@@ -59,9 +64,10 @@ const styles = StyleSheet.create({
     borderColor: "transparent"
   },
   label: {
-    color: "#ffffff",
+    color: theme.colors.cream,
     fontSize: 16,
-    fontWeight: "700"
+    fontWeight: "800",
+    letterSpacing: 0
   },
   pressed: {
     opacity: 0.82
@@ -71,10 +77,10 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.primary
   },
   secondary: {
-    backgroundColor: theme.colors.card,
-    borderColor: theme.colors.border
+    backgroundColor: theme.colors.softGold,
+    borderColor: theme.colors.gold
   },
   secondaryLabel: {
-    color: theme.colors.primary
+    color: theme.colors.primaryDark
   }
 });

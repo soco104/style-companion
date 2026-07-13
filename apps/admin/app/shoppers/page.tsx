@@ -2,6 +2,7 @@ import { ApiNotice } from "../components/api-notice";
 import { EmptyState } from "../components/empty-state";
 import { StatusBadge } from "../components/status-badge";
 import { adminApi, formatMoney } from "../lib/api";
+import { updateShopperFeeWaiverAction } from "../lib/actions";
 
 export default async function ShopperProfilesPage() {
   const shoppers = await adminApi.shoppers();
@@ -30,6 +31,12 @@ export default async function ShopperProfilesPage() {
                 </div>
                 <StatusBadge>{shopper.isActive ? "APPROVED" : "HIDDEN"}</StatusBadge>
               </div>
+              {shopper.feesWaived ? (
+                <p>
+                  <StatusBadge>WAIVED</StatusBadge> Fees waived
+                  {shopper.feeWaiverReason ? `: ${shopper.feeWaiverReason}` : ""}
+                </p>
+              ) : null}
               <dl className="details">
                 <div>
                   <dt>Location</dt>
@@ -52,6 +59,20 @@ export default async function ShopperProfilesPage() {
                   <dd>{shopper.specialties.map((specialty) => specialty.name).join(", ") || "None listed"}</dd>
                 </div>
               </dl>
+              <form action={updateShopperFeeWaiverAction} className="action-form">
+                <input name="id" type="hidden" value={shopper.id} />
+                <input name="feeWaivedByUserId" type="hidden" value={shopper.user.id} />
+                <input name="feesWaived" type="hidden" value={shopper.feesWaived ? "false" : "true"} />
+                <label>
+                  Fee waiver reason
+                  <input
+                    name="feeWaiverReason"
+                    placeholder="Internal reason"
+                    defaultValue={shopper.feeWaiverReason ?? ""}
+                  />
+                </label>
+                <button type="submit">{shopper.feesWaived ? "Remove fee waiver" : "Waive shopper fees"}</button>
+              </form>
             </article>
           ))
         )}

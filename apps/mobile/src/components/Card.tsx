@@ -15,9 +15,14 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: theme.colors.card,
     borderColor: theme.colors.border,
-    borderRadius: 8,
+    borderRadius: theme.radius.lg,
     borderWidth: 1,
+    elevation: 2,
     marginBottom: theme.spacing.md,
-    padding: theme.spacing.md
+    padding: theme.spacing.md,
+    shadowColor: theme.colors.charcoal,
+    shadowOffset: { height: 8, width: 0 },
+    shadowOpacity: 0.08,
+    shadowRadius: 18
   }
 });

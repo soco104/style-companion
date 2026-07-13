@@ -13,8 +13,23 @@ export type User = {
   phone?: string | null;
   role: UserRole;
   createdAt: string;
-  customerProfile?: { id: string; city?: string | null; state?: string | null } | null;
-  shopperProfile?: { id: string; headline: string; city: string; state: string } | null;
+  customerProfile?: {
+    id: string;
+    city?: string | null;
+    state?: string | null;
+    feesWaived?: boolean;
+    feeWaiverReason?: string | null;
+    feeWaivedAt?: string | null;
+  } | null;
+  shopperProfile?: {
+    id: string;
+    headline: string;
+    city: string;
+    state: string;
+    feesWaived?: boolean;
+    feeWaiverReason?: string | null;
+    feeWaivedAt?: string | null;
+  } | null;
 };
 
 export type ShopperProfile = {
@@ -29,9 +44,23 @@ export type ShopperProfile = {
   isActive: boolean;
   averageRating?: string | number | null;
   reviewCount: number;
+  feesWaived: boolean;
+  feeWaiverReason?: string | null;
+  feeWaivedAt?: string | null;
+  feeWaivedByUserId?: string | null;
   createdAt: string;
   user: User;
   specialties: Array<{ id: string; name: string }>;
+};
+
+export type ShopperPricingPackage = {
+  id: string;
+  title: string;
+  sessionCount: number;
+  pricePerSessionCents: number;
+  totalPriceCents: number;
+  description?: string | null;
+  isActive: boolean;
 };
 
 export type Booking = {
@@ -43,6 +72,8 @@ export type Booking = {
   state: string;
   goal: string;
   budgetCents?: number | null;
+  pricingPackage?: ShopperPricingPackage | null;
+  pricingPackageId?: string | null;
   totalPriceCents: number;
   currency: string;
   customerProfile: { id: string; user: User };
@@ -74,4 +105,32 @@ export type SafetyReport = {
   reportedUser?: User | null;
   assignedAdmin?: User | null;
   booking?: { id: string; status: BookingStatus } | null;
+};
+
+export type ApiDiagnosticStatus = "PASS" | "FAIL" | "WARN";
+
+export type ApiDiagnosticCheck = {
+  detail: string;
+  endpoint: string;
+  expected: string;
+  name: string;
+  status: ApiDiagnosticStatus;
+};
+
+export type ApiDiagnosticRun = {
+  apiUrl: string;
+  checks: ApiDiagnosticCheck[];
+  failed: number;
+  generatedAt: string;
+  passed: number;
+  warned: number;
+};
+
+export type ShopperMatchSummary = {
+  id: string;
+  name: string;
+  matchScore: number;
+  city: string;
+  state: string;
+  explanation: string[];
 };

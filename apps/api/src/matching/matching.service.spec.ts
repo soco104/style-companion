@@ -26,6 +26,7 @@ const shopper = (overrides: Record<string, unknown>) => ({
   serviceRadiusMiles: 15,
   specialties: [],
   state: "TN",
+  stylePreferences: [],
   updatedAt: new Date(),
   user: {
     email: "shopper@example.test",
@@ -52,6 +53,13 @@ describe("MatchingService", () => {
           { name: "Workwear" },
           { name: "Capsule Wardrobes" }
         ],
+        stylePreferences: [
+          {
+            avoidedStyles: [],
+            preferredBrands: [],
+            styleTags: ["workwear", "capsule"]
+          }
+        ],
         user: { id: "best-user", name: "Best Match" }
       }),
       shopper({
@@ -63,6 +71,13 @@ describe("MatchingService", () => {
         id: "rating-only",
         reviewCount: 80,
         specialties: [{ name: "Closet Edits" }],
+        stylePreferences: [
+          {
+            avoidedStyles: [],
+            preferredBrands: [],
+            styleTags: ["closet edits"]
+          }
+        ],
         user: { id: "rating-user", name: "Rating Only" }
       }),
       shopper({
@@ -74,6 +89,13 @@ describe("MatchingService", () => {
         id: "far",
         reviewCount: 60,
         specialties: [{ name: "Workwear" }],
+        stylePreferences: [
+          {
+            avoidedStyles: [],
+            preferredBrands: [],
+            styleTags: ["workwear"]
+          }
+        ],
         state: "GA",
         user: { id: "far-user", name: "Far Match" }
       })
@@ -99,10 +121,58 @@ describe("MatchingService", () => {
     expect(best?.explanation).toEqual(
       expect.arrayContaining([
         expect.stringContaining("Distance: Nashville, TN matches"),
+        expect.stringContaining("Style fit: matched preferred styles"),
         expect.stringContaining("Specialty: matched"),
         expect.stringContaining("Availability: has upcoming availability"),
-        expect.stringContaining("Budget: estimated two-hour session fits budget")
+        expect.stringContaining("Budget: estimated two-hour session fits budget"),
+        expect.stringContaining("Scoring weights:")
       ])
+    );
+  });
+
+  it("boosts shoppers whose preferred styles overlap customer style goals", async () => {
+    const prisma = createPrismaMock();
+    prisma.shopperProfile.findMany.mockResolvedValue([
+      shopper({
+        availability: [{ isRecurring: false, startsAt: futureDate }],
+        id: "style-fit",
+        user: { id: "style-fit-user", name: "Style Fit" },
+        stylePreferences: [
+          {
+            avoidedStyles: [],
+            preferredBrands: [],
+            styleTags: ["boho", "vintage", "thrifted", "plus-size styling"]
+          }
+        ]
+      }),
+      shopper({
+        availability: [{ isRecurring: false, startsAt: futureDate }],
+        id: "style-miss",
+        user: { id: "style-miss-user", name: "Style Miss" },
+        stylePreferences: [
+          {
+            avoidedStyles: [],
+            preferredBrands: [],
+            styleTags: ["minimal", "formal", "luxury"]
+          }
+        ]
+      })
+    ]);
+
+    const service = new MatchingService(prisma as never);
+
+    const results = await service.findShoppers({
+      budgetMaxCents: 20000,
+      city: "Nashville",
+      state: "TN",
+      styleGoals: "boho modern thrift-friendly looks",
+      take: 10
+    });
+
+    expect(results.map((result) => result.id)).toEqual(["style-fit", "style-miss"]);
+    expect(results[0]?.matchScore).toBeGreaterThan(results[1]?.matchScore ?? 0);
+    expect(results[0]?.explanation).toEqual(
+      expect.arrayContaining([expect.stringContaining("Style fit: matched preferred styles boho, thrift")])
     );
   });
 
@@ -131,6 +201,13 @@ describe("MatchingService", () => {
         hourlyRateCents: 8500,
         id: "quiz-match",
         specialties: [{ name: "Capsule Wardrobes" }, { name: "Petite Fit" }],
+        stylePreferences: [
+          {
+            avoidedStyles: [],
+            preferredBrands: [],
+            styleTags: ["capsule", "petite", "work"]
+          }
+        ],
         user: { id: "quiz-user", name: "Quiz Match" }
       })
     ]);

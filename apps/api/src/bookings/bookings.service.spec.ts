@@ -16,6 +16,9 @@ const createPrismaMock = () => ({
   },
   shopperProfile: {
     findUnique: jest.fn()
+  },
+  shopperPricingPackage: {
+    findUnique: jest.fn()
   }
 });
 
@@ -176,6 +179,91 @@ describe("BookingsService", () => {
       })
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(prisma.booking.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects inactive pricing packages", async () => {
+    const prisma = createPrismaMock();
+    prisma.customerProfile.findUnique.mockResolvedValue({ id: "customer-profile-1", userId: "customer-user-1" });
+    prisma.shopperProfile.findUnique.mockResolvedValue({
+      availability: [
+        {
+          endsAt: new Date("2026-08-01T20:00:00.000Z"),
+          startsAt: new Date("2026-08-01T14:00:00.000Z")
+        }
+      ],
+      id: "shopper-profile-1",
+      isActive: true,
+      userId: "shopper-user-1"
+    });
+    prisma.shopperPricingPackage.findUnique.mockResolvedValue({
+      id: "package-1",
+      isActive: false,
+      shopperProfileId: "shopper-profile-1"
+    });
+    const service = new BookingsService(prisma as never);
+
+    await expect(
+      service.create({
+        city: "Nashville",
+        customerProfileId: "customer-profile-1",
+        goal: "Build work outfits.",
+        pricingPackageId: "package-1",
+        scheduledEndAt: new Date("2026-08-01T17:00:00.000Z"),
+        scheduledStartAt: new Date("2026-08-01T15:00:00.000Z"),
+        shopperProfileId: "shopper-profile-1",
+        state: "TN",
+        timezone: "America/Chicago"
+      })
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(prisma.booking.create).not.toHaveBeenCalled();
+  });
+
+  it("uses selected active package pricing when creating a booking", async () => {
+    const prisma = createPrismaMock();
+    prisma.customerProfile.findUnique.mockResolvedValue({ id: "customer-profile-1", userId: "customer-user-1" });
+    prisma.shopperProfile.findUnique.mockResolvedValue({
+      availability: [
+        {
+          endsAt: new Date("2026-08-01T20:00:00.000Z"),
+          startsAt: new Date("2026-08-01T14:00:00.000Z")
+        }
+      ],
+      id: "shopper-profile-1",
+      isActive: true,
+      userId: "shopper-user-1"
+    });
+    prisma.shopperPricingPackage.findUnique.mockResolvedValue({
+      id: "package-1",
+      isActive: true,
+      shopperProfileId: "shopper-profile-1",
+      totalPriceCents: 17000
+    });
+    prisma.booking.findFirst.mockResolvedValue(null);
+    prisma.booking.create.mockResolvedValue({ id: "booking-1", pricingPackageId: "package-1", totalPriceCents: 17000 });
+    const service = new BookingsService(prisma as never);
+
+    await expect(
+      service.create({
+        city: "Nashville",
+        customerProfileId: "customer-profile-1",
+        goal: "Build work outfits.",
+        pricingPackageId: "package-1",
+        scheduledEndAt: new Date("2026-08-01T17:00:00.000Z"),
+        scheduledStartAt: new Date("2026-08-01T15:00:00.000Z"),
+        shopperProfileId: "shopper-profile-1",
+        state: "TN",
+        timezone: "America/Chicago",
+        totalPriceCents: 99999
+      })
+    ).resolves.toEqual({ id: "booking-1", pricingPackageId: "package-1", totalPriceCents: 17000 });
+    expect(prisma.booking.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          pricingPackageId: "package-1",
+          totalPriceCents: 17000
+        })
+      })
+    );
   });
 
   it("prevents accepting a requested booking when the shopper is already reserved", async () => {
